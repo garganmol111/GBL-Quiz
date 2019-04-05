@@ -1,7 +1,6 @@
 //https://stackoverflow.com/questions/3438456/complex-process-of-making-a-typical-housie-bingo-game-ticket
 import 'dart:core';
 import 'dart:math';
-import 'package:toaster_linear/toaster_linear.dart';
 
 List<List<int>> generateColumns() {
   List<List<int>> col = new List();

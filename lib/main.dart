@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tambola.dart';
-import 'addquestion.dart';
+import 'createquizpage.dart';
 
 void main() => runApp(MyApp());
 
@@ -23,7 +23,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
+ 
+  //-----------------------
 
   @override
   Widget build(BuildContext context) {
@@ -62,11 +63,11 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.grey,
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => AddQuestionPage()
+                      builder: (context) => CreateQuizPage()
                     ));
                   },
                   child: Text(
-                    "Add Questions",
+                    "Create a Quiz",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20.0,
