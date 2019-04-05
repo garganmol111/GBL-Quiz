@@ -3,12 +3,14 @@ import 'dart:math';
 import 'generate_ticket.dart';
 import 'gamebutton.dart';
 import 'builddialog.dart';
+import 'quizquestions.dart';
 
 class TambolaTicket extends StatefulWidget {
   final int rows;
   final int cols;
+  final Quiz quiz;
 
-  const TambolaTicket({Key key, this.rows: 9, this.cols: 3}) : super(key: key);
+  const TambolaTicket({Key key, this.rows: 9, this.cols: 3, this.quiz}) : super(key: key);
   
   @override 
   _TambolaTicketState createState() => _TambolaTicketState();
@@ -95,17 +97,22 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
       for(var j=0; j<widget.cols; j++) {
         int value = transpose(initialTicket)[i][j];
-      
-        rowChildren.add(
-          new GameButton(
-            id: id,
-            value: value,
-            playing: isNumberPlaying(value),
-            crossed: isCrossed(value),
-            onPressed: onButtonClicked,
-          )
-        );
-        id++;
+
+        if(value!=0) {
+          rowChildren.add(
+            new GameButton(
+              id: id,
+              value: value,
+              playing: isNumberPlaying(value),
+              crossed: isCrossed(value),
+              onPressed: onButtonClicked,
+            )
+          );
+          id++;
+        }
+        else {
+          rowChildren.add(Text(""));
+        }
       }
       rows.add(new TableRow(children: rowChildren));
     }
@@ -114,21 +121,21 @@ class _TambolaTicketState extends State<TambolaTicket> {
   
   onButtonClicked(int value, int id) {
     setState(() {
-      
+      showQuestion(id, widget.quiz);
       if(value == randomNumber) {
         if(isNumberPlaying(value)) {
-          showQuestion(id);
+          showQuestion(id, widget.quiz);
           resultText = resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
           statusText = "Pull next number";
           crossedNumbers.add(value);
         } else {
           resultText = Random.secure().nextBool()
-              ? "You can't cheat machine code"
-              : "Nice try, but you don't have it on your ticket!";
+              ? "You can't cheat machine code id: $id"
+              : "Nice try, but you don't have it on your ticket! id: $id";
         }
       } else {
         resultText =
-            Random.secure().nextBool() ? "Missed, are u ok?" : "Try harder";
+            Random.secure().nextBool() ? "Missed, are u ok? id: $id" : "Try harder id: $id";
       }
     });
   }
@@ -161,8 +168,8 @@ class _TambolaTicketState extends State<TambolaTicket> {
   }
 
 
-  void showQuestion(int id) {
-    showDialog(context: _context, builder: (_)=>BuildDialog(ID: id));
+  void showQuestion(int id, Quiz quiz) {
+    showDialog(context: _context, builder: (_)=>BuildDialog(ID: id, quiz: quiz,));
   }
 }
 
