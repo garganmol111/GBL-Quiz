@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
                 RaisedButton(
                   color: Colors.grey,
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(
+                    final result = Navigator.push(context, MaterialPageRoute(
                       builder: (context) => TambolaTicket()
                     ));
                   },

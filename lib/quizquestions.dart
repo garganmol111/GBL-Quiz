@@ -39,6 +39,12 @@ class Quiz {
     });
     return temp;
   }
+
+  void reset() {
+    for(int i=0; i<15; i++) {
+      this.questions[i].isCorrect = 0;
+    }
+  }
 }
 
 class Questions {

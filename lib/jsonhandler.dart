@@ -15,11 +15,11 @@ class JSONHandler {
   JSONHandler({this.fileName = "quizJSONfile.json"}) {
     getApplicationDocumentsDirectory().then((Directory directory) {
       this.dir = directory;
-      print(directory);
+      //print(directory);
       this.jsonFile = new File(this.dir.path + "/" + this.fileName);
-      print(this.jsonFile);
+      //print(this.jsonFile);
       fileExists = jsonFile.existsSync();
-      print(fileExists);
+      //print(fileExists);
       if (fileExists)
         this._fileContent = jsonDecode(jsonFile.readAsStringSync());
     });

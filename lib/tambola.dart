@@ -23,11 +23,20 @@ class _TambolaTicketState extends State<TambolaTicket> {
   List<int> pot;
   List<List<int>> initialTicket;
   List<int> crossedNumbers;
+  List<int> correctAnswers;
 
   String resultText = "";
   String statusText = "Roll it";
 
   BuildContext _context;
+
+  List<TableRow> renderedTicket;
+
+  bool _isCornersButtonDisabled;
+  bool _isRow1ButtonDisabled;
+  bool _isRow2ButtonDisabled;
+  bool _isRow3ButtonDisabled;
+  bool _isFullHouseButtonDisabled;
 
   @override
   void initState() {
@@ -39,8 +48,17 @@ class _TambolaTicketState extends State<TambolaTicket> {
     initialTicket = generateTicket();
     pot = List<int>.generate(90, (i) => i + 1);
     crossedNumbers = [];
+    correctAnswers = [];
+    renderedTicket = [];
+    widget.quiz.reset();
 
+    _isCornersButtonDisabled = false;
+    _isRow1ButtonDisabled = false;
+    _isRow2ButtonDisabled = false;
+    _isRow3ButtonDisabled = false;
+    _isFullHouseButtonDisabled = false;
     randomNumber = -1;
+
   }
 
   @override
@@ -51,41 +69,65 @@ class _TambolaTicketState extends State<TambolaTicket> {
           title: Text(widget.quiz.quizName),
           elevation: 0.0,
         ),
-        body: Container(
-          child: Column(
-            children: <Widget>[
-              Flexible(
-                  child: new Table(
-                border: TableBorder.all(),
-                children: buildButtons(),
-              )),
-              Text("$statusText"),
-              //Text("$resultText"),
-              Center(
-                  child: Row(
-                children: <Widget>[
-                  FlatButton(
-                    color: Colors.grey,
-                    onPressed: rollNext,
-                    child: Text("Roll"),
-                  ),
-                  FlatButton(
-                    color: Colors.grey,
-                    onPressed: () {
-                      setState(() {
-                        restart();
-                      });
-                    },
-                    child: Text("Restart"),
-                  )
-                ],
-              )),
-            ],
+        body: SingleChildScrollView(
+          child: Container(
+            child: Column(
+              children: <Widget>[
+                Container(
+                    child: new Table(
+                  border: TableBorder.all(),
+                  children: buildButtons(),
+                )),
+                Text("$statusText"),
+                //Text("$resultText"),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    FlatButton(
+                      color: Colors.grey,
+                      onPressed: rollNext,
+                      child: Text("Roll"),
+                    ),
+                    FlatButton(
+                      color: Colors.grey,
+                      onPressed: () {
+                        setState(() {
+                          restart();
+                        });
+                      },
+                      child: Text("Restart"),
+                    )
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _buildCornersButton(),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _buildRow1Button(),
+                    _buildRow2Button(),
+                    _buildRow3Button(),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _buildFullHouseButton(),
+                  ],
+                )
+              ],
+            ),
           ),
         ));
   }
 
   List<TableRow> buildButtons() {
+    correctAnswers = [];
     List<TableRow> rows = [];
 
     int id = 0;
@@ -93,9 +135,9 @@ class _TambolaTicketState extends State<TambolaTicket> {
     for (var i = 0; i < widget.rows; i++) {
       //new empty row
       List<Widget> rowChildren = [];
-
+      
       for (var j = 0; j < widget.cols; j++) {
-        int value = transpose(initialTicket)[i][j];
+        int value = initialTicket[i][j];
 
         if (value != 0) {
           rowChildren.add(new GameButton(
@@ -107,6 +149,8 @@ class _TambolaTicketState extends State<TambolaTicket> {
             ques: widget.quiz.questions[id],
             answerStatus: getAnswerStatus(id),
           ));
+          if(getAnswerStatus(id) == 2)
+            correctAnswers.add(value);
           id++;
         } else {
           rowChildren.add(Text(""));
@@ -114,11 +158,21 @@ class _TambolaTicketState extends State<TambolaTicket> {
       }
       rows.add(new TableRow(children: rowChildren));
     }
+    renderedTicket = rows.map((e) => e).toList();
     return rows;
   }
 
   onButtonClicked(int value, int id, BuildContext context) {
     setState(() {
+
+      //////////////////////////////////////////////////////////
+      // showQuestion(id, widget.quiz, context);
+      //     resultText =
+      //         resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
+      //     statusText = "Pull next number";
+      //     crossedNumbers.add(value);
+      /////////////////////////////////////////////////////////
+
       if (value == randomNumber) {
         if (isNumberPlaying(value)) {
           showQuestion(id, widget.quiz, context);
@@ -126,6 +180,8 @@ class _TambolaTicketState extends State<TambolaTicket> {
               resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
           statusText = "Pull next number";
           crossedNumbers.add(value);
+          if(widget.quiz.questions[id].isCorrect == 2)
+            correctAnswers.add(id);
         } else {
           resultText = Random.secure().nextBool()
               ? "You can't cheat machine code id: $id"
@@ -149,15 +205,16 @@ class _TambolaTicketState extends State<TambolaTicket> {
         this.statusText = "Rolled: $randomNumber";
         this.resultText = "playing one more time...";
       } else {
-        restart();
+        //restart();
       }
     });
   }
 
   isNumberPlaying(int value) {
-    if (initialTicket[0].contains(value) ||
-        initialTicket[1].contains(value) ||
-        initialTicket[2].contains(value)) {
+    List<List<int>> temp = transpose(initialTicket);
+    if (temp[0].contains(value) ||
+        temp[1].contains(value) ||
+        temp[2].contains(value)) {
       return true;
     } else {
       return false;
@@ -182,5 +239,246 @@ class _TambolaTicketState extends State<TambolaTicket> {
       setState(() {});
     });
     //await Navigator.push(context, new MaterialPageRoute(builder: (context) => BuildDialog(ID: id, quiz: quiz,)));
+  }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// CALL BUTTONS CHECKING FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////
+  
+
+  Widget _buildCornersButton() {
+    
+    Text retText() {
+      if(_isCornersButtonDisabled) {
+        return new Text(
+          "Call Corners",
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough
+          ),
+        );
+      }
+      else
+        return new Text("Call Corners");
+    }
+
+    return new RaisedButton(
+      child: retText(),
+      onPressed: _isCornersButtonDisabled ? null : checkCorners,
+      color: Colors.grey,
+    );
+  }
+
+  Widget _buildRow1Button() {
+    Text retText() {
+      if(_isRow1ButtonDisabled) {
+        return new Text(
+          "Call Row 1",
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough
+          ),
+        );
+      }
+      else
+        return new Text("Call Row 1");
+    }
+
+    return new RaisedButton(
+      child: retText(),
+      onPressed: _isRow1ButtonDisabled ? null : checkRow1,
+      color: Colors.grey,
+    );
+  }
+
+  Widget _buildRow2Button() {
+    Text retText() {
+      if(_isRow2ButtonDisabled) {
+        return new Text(
+          "Call Row 2",
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough
+          ),
+        );
+      }
+      else
+        return new Text("Call Row 2");
+    }
+
+    return new RaisedButton(
+      child: retText(),
+      onPressed: _isRow2ButtonDisabled ? null : checkRow2,
+      color: Colors.grey,
+    );
+  }
+
+  Widget _buildRow3Button() {
+    Text retText() {
+      if(_isRow3ButtonDisabled) {
+        return new Text(
+          "Call Row 3",
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough
+          ),
+        );
+      }
+      else
+        return new Text("Call Row 3");
+    }
+
+    return new RaisedButton(
+      child: retText(),
+      onPressed: _isRow3ButtonDisabled ? null : checkRow3,
+      color: Colors.grey,
+    );
+  }
+
+  Widget _buildFullHouseButton() {
+    Text retText() {
+      if(_isFullHouseButtonDisabled) {
+        return new Text(
+          "Call Full House",
+          style: TextStyle(
+            decoration: TextDecoration.lineThrough
+          ),
+        );
+      }
+      else
+        return new Text("Call Full House");
+    }
+
+    return new RaisedButton(
+      child: retText(),
+      onPressed: _isFullHouseButtonDisabled ? null : checkFullHouse,
+      color: Colors.grey,
+    );
+  }
+
+  void checkCorners() {
+    List<int> temp = [];
+    List<List<int>> tempTicket = transpose(initialTicket);
+    for(int i=0; i<3; i++) {
+      for(int j=0; j<9; j++) {
+        if(tempTicket[i][j] != 0)
+          temp.add(tempTicket[i][j]);
+      }
+    }
+    
+    List<int> newTemp = [temp[0], temp[4], temp[10], temp[14]];
+    bool flag = true;
+    newTemp.forEach((f) {
+      if(crossedNumbers.contains(f))
+        flag=true;
+      else flag=false;
+    });
+
+    print(correctAnswers);
+
+    print(flag.toString());
+    setState(() {
+      _isCornersButtonDisabled = flag;
+    });
+  }
+
+  void checkRow1() {
+    List<int> temp = [];
+    List<List<int>> tempTicket = transpose(initialTicket);
+    for(int i=0; i<3; i++) {
+      for(int j=0; j<9; j++) {
+        if(tempTicket[i][j] != 0)
+          temp.add(tempTicket[i][j]);
+      }
+    }
+    
+    List<int> newTemp = [temp[0], temp[1], temp[2], temp[3], temp[4]];
+    bool flag = true;
+    newTemp.forEach((f) {
+      if(crossedNumbers.contains(f))
+        flag=true;
+      else flag=false;
+    });
+
+    print(correctAnswers);
+
+    print(flag.toString());
+    setState(() {
+      _isRow1ButtonDisabled = flag;
+    });
+  }
+
+  void checkRow2() {
+    List<int> temp = [];
+    List<List<int>> tempTicket = transpose(initialTicket);
+    for(int i=0; i<3; i++) {
+      for(int j=0; j<9; j++) {
+        if(tempTicket[i][j] != 0)
+          temp.add(tempTicket[i][j]);
+      }
+    }
+    
+    List<int> newTemp = [temp[5], temp[6], temp[7], temp[8], temp[9]];
+    bool flag = true;
+    newTemp.forEach((f) {
+      if(crossedNumbers.contains(f))
+        flag=true;
+      else flag=false;
+    });
+
+    print(correctAnswers);
+
+    print(flag.toString());
+    setState(() {
+      _isRow2ButtonDisabled = flag;
+    });
+  }
+
+  void checkRow3() {
+    List<int> temp = [];
+    List<List<int>> tempTicket = transpose(initialTicket);
+    for(int i=0; i<3; i++) {
+      for(int j=0; j<9; j++) {
+        if(tempTicket[i][j] != 0)
+          temp.add(tempTicket[i][j]);
+      }
+    }
+    
+    List<int> newTemp = [temp[10], temp[11], temp[12], temp[13], temp[14]];
+    bool flag = true;
+    newTemp.forEach((f) {
+      if(crossedNumbers.contains(f))
+        flag=true;
+      else flag=false;
+    });
+
+    print(correctAnswers);
+
+    print(flag.toString());
+    setState(() {
+      _isRow3ButtonDisabled = flag;
+    });
+  }
+
+  void checkFullHouse() {
+    List<int> temp = [];
+    List<List<int>> tempTicket = transpose(initialTicket);
+    for(int i=0; i<3; i++) {
+      for(int j=0; j<9; j++) {
+        if(tempTicket[i][j] != 0)
+          temp.add(tempTicket[i][j]);
+      }
+    }
+    
+    bool flag = true;
+    temp.forEach((f) {
+      if(crossedNumbers.contains(f))
+        flag=true;
+      else flag=false;
+    });
+
+    print(correctAnswers);
+
+    print(flag.toString());
+    setState(() {
+      _isFullHouseButtonDisabled = flag;
+    });
   }
 }

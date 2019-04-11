@@ -175,7 +175,7 @@ List<List<int>> generateTicket() {
       r3c++;
     }
   }
-  return ticket;
+  return transpose(ticket);
 }
 
 List<List<int>> transpose(List<List<int>> col) {
