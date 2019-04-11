@@ -3,7 +3,7 @@ import 'quizquestions.dart';
 
 class GameButton extends StatelessWidget {
   final int id;
-  final Function(int, int) onPressed;
+  final Function(int, int, BuildContext) onPressed;
   final bool playing;
   final bool crossed;
   final int answerStatus;
@@ -26,7 +26,7 @@ class GameButton extends StatelessWidget {
     if(this.value != 0) {
       return FlatButton(
         color: decideColor(),
-        onPressed: (){onPressed(this.value, this.id);}, 
+        onPressed: (){onPressed(this.value, this.id, context);}, 
         child: Stack(
           children: <Widget>[
             // Visibility(

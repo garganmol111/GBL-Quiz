@@ -35,7 +35,7 @@ class _BuildDialogState extends State<BuildDialog>{
       else
         widget.quiz.questions[widget.ID].isCorrect = 1;
 
-      Navigator.pop(context, true); 
+      Navigator.pop(context, true);
     }
 
     return new SimpleDialog(

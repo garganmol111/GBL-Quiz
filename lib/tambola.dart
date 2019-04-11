@@ -10,14 +10,14 @@ class TambolaTicket extends StatefulWidget {
   final int cols;
   final Quiz quiz;
 
-  const TambolaTicket({Key key, this.rows: 9, this.cols: 3, this.quiz}) : super(key: key);
-  
-  @override 
+  const TambolaTicket({Key key, this.rows: 9, this.cols: 3, this.quiz})
+      : super(key: key);
+
+  @override
   _TambolaTicketState createState() => _TambolaTicketState();
 }
 
 class _TambolaTicketState extends State<TambolaTicket> {
-
   int randomNumber = -1;
 
   List<int> pot;
@@ -37,7 +37,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   void restart() {
     initialTicket = generateTicket();
-    pot = List<int>.generate(90, (i) => i+1);
+    pot = List<int>.generate(90, (i) => i + 1);
     crossedNumbers = [];
 
     randomNumber = -1;
@@ -47,23 +47,22 @@ class _TambolaTicketState extends State<TambolaTicket> {
   Widget build(BuildContext context) {
     _context = context;
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Quiz"),
-        elevation: 0.0,
-      ),
-      body: Container(
-        child: Column(
-          children: <Widget>[
-            Flexible(
-              child: new Table(
-                border:TableBorder.all(),
+        appBar: AppBar(
+          title: Text(widget.quiz.quizName),
+          elevation: 0.0,
+        ),
+        body: Container(
+          child: Column(
+            children: <Widget>[
+              Flexible(
+                  child: new Table(
+                border: TableBorder.all(),
                 children: buildButtons(),
-              )
-            ),
-            Text("$statusText"),
-            Text("$resultText"),
-            Center(
-              child: Row(
+              )),
+              Text("$statusText"),
+              //Text("$resultText"),
+              Center(
+                  child: Row(
                 children: <Widget>[
                   FlatButton(
                     color: Colors.grey,
@@ -72,47 +71,44 @@ class _TambolaTicketState extends State<TambolaTicket> {
                   ),
                   FlatButton(
                     color: Colors.grey,
-                    onPressed: () {setState(() {restart();});},
+                    onPressed: () {
+                      setState(() {
+                        restart();
+                      });
+                    },
                     child: Text("Restart"),
                   )
                 ],
-              )
-            ),
-            Text("Pot: " + pot.toString())
-          ],
-        ),
-      )
-    );
+              )),
+            ],
+          ),
+        ));
   }
 
   List<TableRow> buildButtons() {
-
     List<TableRow> rows = [];
 
-    int id=0;
+    int id = 0;
 
-    for(var i=0; i<widget.rows; i++) {
+    for (var i = 0; i < widget.rows; i++) {
       //new empty row
       List<Widget> rowChildren = [];
 
-      for(var j=0; j<widget.cols; j++) {
+      for (var j = 0; j < widget.cols; j++) {
         int value = transpose(initialTicket)[i][j];
 
-        if(value!=0) {
-          rowChildren.add(
-            new GameButton(
-              id: id,
-              value: value,
-              playing: isNumberPlaying(value),
-              crossed: isCrossed(value, id),
-              onPressed: onButtonClicked,
-              ques: widget.quiz.questions[id],
-              answerStatus: getAnswerStatus(id),
-            )
-          );
+        if (value != 0) {
+          rowChildren.add(new GameButton(
+            id: id,
+            value: value,
+            playing: isNumberPlaying(value),
+            crossed: isCrossed(value, id),
+            onPressed: onButtonClicked,
+            ques: widget.quiz.questions[id],
+            answerStatus: getAnswerStatus(id),
+          ));
           id++;
-        }
-        else {
+        } else {
           rowChildren.add(Text(""));
         }
       }
@@ -120,13 +116,14 @@ class _TambolaTicketState extends State<TambolaTicket> {
     }
     return rows;
   }
-  
-  onButtonClicked(int value, int id) {
+
+  onButtonClicked(int value, int id, BuildContext context) {
     setState(() {
-      if(value == randomNumber) {
-        if(isNumberPlaying(value)) {
-          showQuestion(id, widget.quiz);
-          resultText = resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
+      if (value == randomNumber) {
+        if (isNumberPlaying(value)) {
+          showQuestion(id, widget.quiz, context);
+          resultText =
+              resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
           statusText = "Pull next number";
           crossedNumbers.add(value);
         } else {
@@ -135,29 +132,32 @@ class _TambolaTicketState extends State<TambolaTicket> {
               : "Nice try, but you don't have it on your ticket! id: $id";
         }
       } else {
-        resultText =
-            Random.secure().nextBool() ? "Missed, are u ok? id: $id" : "Try harder id: $id";
+        resultText = Random.secure().nextBool()
+            ? "Missed, are u ok? id: $id"
+            : "Try harder id: $id";
       }
     });
   }
 
   rollNext() {
     setState(() {
-     if(pot.length > 0) {
-       int randomIndex = Random.secure().nextInt(pot.length);
+      if (pot.length > 0) {
+        int randomIndex = Random.secure().nextInt(pot.length);
 
-       this.randomNumber = pot.removeAt(randomIndex);
+        this.randomNumber = pot.removeAt(randomIndex);
 
-       this.statusText = "Rolled: $randomNumber";
-       this.resultText = "playing one more time...";
-     } else {
-       restart();
-     }
+        this.statusText = "Rolled: $randomNumber";
+        this.resultText = "playing one more time...";
+      } else {
+        restart();
+      }
     });
   }
 
   isNumberPlaying(int value) {
-    if(initialTicket[0].contains(value) || initialTicket[1].contains(value) || initialTicket[2].contains(value)) { 
+    if (initialTicket[0].contains(value) ||
+        initialTicket[1].contains(value) ||
+        initialTicket[2].contains(value)) {
       return true;
     } else {
       return false;
@@ -172,8 +172,15 @@ class _TambolaTicketState extends State<TambolaTicket> {
     return widget.quiz.questions[id].isCorrect;
   }
 
-  void showQuestion(int id, Quiz quiz) {
-    showDialog(context: _context, builder: (_)=>BuildDialog(ID: id, quiz: quiz,));
+  void showQuestion(int id, Quiz quiz, BuildContext context) async {
+    await showDialog(
+        context: _context,
+        builder: (_) => BuildDialog(
+              ID: id,
+              quiz: quiz,
+            )).then((val) {
+      setState(() {});
+    });
+    //await Navigator.push(context, new MaterialPageRoute(builder: (context) => BuildDialog(ID: id, quiz: quiz,)));
   }
 }
-

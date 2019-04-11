@@ -16,15 +16,13 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
+ 
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
- 
-  //-----------------------
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +34,26 @@ class _HomePageState extends State<HomePage> {
         child: new Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            new Row(
+              mainAxisAlignment:MainAxisAlignment.center,
+              children: <Widget>[
+                RaisedButton(
+                  color: Colors.grey,
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => TambolaTicket()
+                    ));
+                  },
+                  child: Text(
+                    "Sign in",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20.0,
+                    )
+                  ),
+                ),             
+              ]
+            ),
             new Row(
               mainAxisAlignment:MainAxisAlignment.center,
               children: <Widget>[
