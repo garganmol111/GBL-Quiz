@@ -104,8 +104,10 @@ class _TambolaTicketState extends State<TambolaTicket> {
               id: id,
               value: value,
               playing: isNumberPlaying(value),
-              crossed: isCrossed(value),
+              crossed: isCrossed(value, id),
               onPressed: onButtonClicked,
+              ques: widget.quiz.questions[id],
+              answerStatus: getAnswerStatus(id),
             )
           );
           id++;
@@ -121,7 +123,6 @@ class _TambolaTicketState extends State<TambolaTicket> {
   
   onButtonClicked(int value, int id) {
     setState(() {
-      showQuestion(id, widget.quiz);
       if(value == randomNumber) {
         if(isNumberPlaying(value)) {
           showQuestion(id, widget.quiz);
@@ -163,10 +164,13 @@ class _TambolaTicketState extends State<TambolaTicket> {
     }
   }
 
-  isCrossed(int value) {
+  isCrossed(int value, int id) {
     return crossedNumbers.contains(value);
   }
 
+  int getAnswerStatus(int id) {
+    return widget.quiz.questions[id].isCorrect;
+  }
 
   void showQuestion(int id, Quiz quiz) {
     showDialog(context: _context, builder: (_)=>BuildDialog(ID: id, quiz: quiz,));

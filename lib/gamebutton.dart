@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'quizquestions.dart';
 
 class GameButton extends StatelessWidget {
   final int id;
   final Function(int, int) onPressed;
   final bool playing;
   final bool crossed;
+  final int answerStatus;
   final int value;
+  final Questions ques;
 
   const GameButton({
     Key key,
@@ -14,7 +17,9 @@ class GameButton extends StatelessWidget {
     this.playing,
     this.crossed,
     this.value,
-  }) : super(key: key);
+    this.ques,
+    this.answerStatus
+  } ) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +29,14 @@ class GameButton extends StatelessWidget {
         onPressed: (){onPressed(this.value, this.id);}, 
         child: Stack(
           children: <Widget>[
-            Visibility(
-              visible: crossed,
-              child: Icon(
-                Icons.done,
-                size: 48,
-                color: Colors.brown,
-              )
-            ),
+            // Visibility(
+            //   visible: crossed,
+            //   child: Icon(
+            //     Icons.done,
+            //     size: 48,
+            //     color: Colors.brown,
+            //   )
+            // ),
             decideText()
             
           ],
@@ -46,8 +51,14 @@ class GameButton extends StatelessWidget {
     if(!this.playing)
       return Colors.white;
     else if(this.crossed) {
-      return Colors.yellow;
-    } 
+      if(answerStatus == 0)
+        return Colors.white;
+      else if(answerStatus == 1) 
+        return Colors.red;
+      else  return Colors.green;
+    }
+    else
+      return Colors.white;
   }
 
   Text decideText() {
@@ -60,4 +71,5 @@ class GameButton extends StatelessWidget {
     //   ),
     // );
   }
+
 }

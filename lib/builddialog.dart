@@ -30,11 +30,16 @@ class _BuildDialogState extends State<BuildDialog>{
     //Quiz quiz = jsonHandler.getData();
 
     void checkAnswer() {
-      if(_radioValue == widget.quiz.questions[widget.ID].answer);
+      if(_radioValue == widget.quiz.questions[widget.ID].answer)
+        widget.quiz.questions[widget.ID].isCorrect = 2;
+      else
+        widget.quiz.questions[widget.ID].isCorrect = 1;
+
+      Navigator.pop(context, true); 
     }
 
     return new SimpleDialog(
-      title: Text("Question ${widget.ID}"),
+      title: Text("Question ${widget.ID + 1}"),
       children: <Widget>[
         Container(
           padding: EdgeInsets.all(12.0),

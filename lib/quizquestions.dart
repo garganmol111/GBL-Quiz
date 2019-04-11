@@ -46,7 +46,8 @@ class Questions {
   String question;
   List<String> options;
   int answer;
-
+  int isCorrect = 0;
+  
   Questions({this.qID, this.question, this.options, this.answer});
 
   Questions.fromJson(Map<String, dynamic> json) {
