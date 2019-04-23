@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'jsonhandler.dart';
+//import 'jsonhandler.dart';
 import 'quizquestions.dart';
 
 class BuildDialog extends StatefulWidget {
@@ -49,7 +49,7 @@ class _BuildDialogState extends State<BuildDialog>{
                   new Row(
                     //mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text(widget.quiz.questions[widget.ID].question, style: TextStyle(fontSize: 14.0)),
+                      Expanded(child: Text(widget.quiz.questions[widget.ID].question, style: TextStyle(fontSize: 14.0))),
                     ],
                   ),
                   new Row(

@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
-import 'jsonhandler.dart';
+//import 'jsonhandler.dart';
 import 'quizquestions.dart';
 import 'tambola.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:firebase_database/firebase_database.dart';
 
 class CreateQuizPage extends StatefulWidget {
-  const CreateQuizPage({Key key}) : super(key: key);
+
+  final databaseReference;
+
+  const CreateQuizPage({
+    Key key,
+    this.databaseReference
+  }) : super(key: key);
 
   @override
   _CreateQuizPageState createState() => _CreateQuizPageState();
@@ -13,7 +22,7 @@ class CreateQuizPage extends StatefulWidget {
 int qID = 1;
 
 class _CreateQuizPageState extends State<CreateQuizPage> {
-  JSONHandler jsonFile = new JSONHandler();
+  //JSONHandler jsonFile = new JSONHandler();
 
   //Text controllers for input fields
   TextEditingController quizIDController = new TextEditingController();
@@ -64,15 +73,16 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: RaisedButton(
-                      child: Text("Enter Questions"),
-                      onPressed: (){setState(() {
-                        flag1=true;
-                      });},
-                      color: Colors.grey,
-                    )
-                  )
+                      padding: const EdgeInsets.all(8.0),
+                      child: RaisedButton(
+                        child: Text("Enter Questions"),
+                        onPressed: () {
+                          setState(() {
+                            flag1 = true;
+                          });
+                        },
+                        color: Colors.grey,
+                      ))
                 ],
               ),
               Container(
@@ -86,15 +96,18 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   Widget returnCard(int id) {
-    if(flag1)
+    if (flag1)
       return Card(
         child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
               Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("Enter Question $qID/15", style: TextStyle(fontSize: 20.0),),
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  "Enter Question $qID/15",
+                  style: TextStyle(fontSize: 20.0),
                 ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Row(
@@ -166,7 +179,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                   children: <Widget>[
                     Expanded(
                       child: TextField(
-                        decoration: InputDecoration(hintText: "Enter Answer no."),
+                        decoration:
+                            InputDecoration(hintText: "Enter Answer no."),
                         keyboardType: TextInputType.number,
                         controller: answerController,
                       ),
@@ -178,9 +192,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: getButton()
-                  ),
+                      padding: const EdgeInsets.all(8.0), child: getButton()),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: RaisedButton(
@@ -193,7 +205,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                     padding: const EdgeInsets.all(8.0),
                     child: RaisedButton(
                       color: Colors.grey,
-                      onPressed: def,
+                      onPressed: qID>16?(){} : def,
                       child: Text("fill default"),
                     ),
                   ),
@@ -203,29 +215,29 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
           ),
         ),
       );
-    else  return Text("");
+    else
+      return Text("");
   }
 
   void def() {
-      questionController.text = "question $qID";
-      op1Controller.text = "op 1";
-      op2Controller.text = "op 2";
-      op3Controller.text = "op 3";
-      op4Controller.text = "op 4";
-      answerController.text = "2";
-      if(qID >= 15) submit();
-      onPressedNext();
+    questionController.text = "question $qID";
+    op1Controller.text = "op 1";
+    op2Controller.text = "op 2";
+    op3Controller.text = "op 3";
+    op4Controller.text = "op 4";
+    answerController.text = "2";
+    if (qID > 15) submit();
+    onPressedNext();
   }
 
   RaisedButton getButton() {
-    if(qID >= 15) {
+    if (qID > 15) {
       return RaisedButton(
         child: Text("Submit"),
         onPressed: submit,
         color: Colors.grey,
       );
-    }
-    else {
+    } else {
       return RaisedButton(
         child: Text("Next"),
         onPressed: onPressedNext,
@@ -235,16 +247,32 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   void submit() {
-    newQuiz = new Quiz(quizID: quizIDController.text, quizName: quizNameController.text, questions: questions);
+    
+    questions.add(Questions(qID: 100, question: "", options: ["","","",""], answer: 1));
+    questions.removeLast();
+    newQuiz = new Quiz(
+        quizID: quizIDController.text,
+        quizName: quizNameController.text,
+        questions: questions);
     //jsonFile.writeToFile(newQuiz);
     //Navigator.of(context).pop();
 
-    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => TambolaTicket(quiz: newQuiz)
-    ));
+    widget.databaseReference
+        .child(quizIDController.text)
+        .set({
+          'quizID': newQuiz.quizID,
+          'quizName': newQuiz.quizName,
+          'questions': questions.map((v) => v.toJson()).toList()
+        });
+
+    //print(newQuiz);
+
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => LoadingScreen(quizID: newQuiz.quizID, databaseReference: widget.databaseReference,)));
   }
 
   void onPressedNext() {
+    
     setState(() {
       Questions temp = new Questions(
           qID: qID,
@@ -258,22 +286,26 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
           answer: int.parse(answerController.text));
       questions.add(temp);
       qID++;
+      //print(temp);
+
+
+
       clearTextFieldsFromCard();
     });
   }
 
   void clearTextFieldsFromCard() {
-      questionController.clear();
-      op1Controller.clear();
-      op2Controller.clear();
-      op3Controller.clear();
-      op4Controller.clear();
-      answerController.clear();
+    questionController.clear();
+    op1Controller.clear();
+    op2Controller.clear();
+    op3Controller.clear();
+    op4Controller.clear();
+    answerController.clear();
   }
 
   void reset() {
     setState(() {
-      qID=1;
+      qID = 1;
       questions.clear();
       clearTextFieldsFromCard();
       quizIDController.clear();
@@ -281,17 +313,11 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       flag1 = false;
     });
   }
-} 
-
-
-
-
+}
 
 // class CheckPage extends StatefulWidget {
 
 //   CheckPage();
-
-  
 
 //   @override
 //   _CheckPageState createState() => _CheckPageState();
@@ -310,8 +336,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
 //       quiz = handler.getData();
 //     });
 
-    
- 
 //     return Scaffold(
 //       appBar: AppBar(
 //         title: Text("check")

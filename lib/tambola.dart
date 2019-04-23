@@ -4,14 +4,138 @@ import 'generate_ticket.dart';
 import 'gamebutton.dart';
 import 'builddialog.dart';
 import 'quizquestions.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
+import 'result_page.dart';
+
+class QuizState<T extends StatefulWidget> extends State<T> {
+  Quiz _quiz;
+
+  set setQuiz(Quiz quiz) => setState(() {
+        _quiz = quiz;
+      });
+
+  Quiz get getQuiz => _quiz;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text("");
+  }
+}
+
+class LoadingScreen extends StatefulWidget {
+  const LoadingScreen({Key key, this.quizID, this.databaseReference})
+      : super(key: key);
+
+  final quizID;
+  final databaseReference;
+
+  _LoadingScreenState createState() => _LoadingScreenState();
+}
+
+class _LoadingScreenState extends QuizState<LoadingScreen> {
+  Quiz quiz;
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// If the LoadingScreen widget has an initial message set, then the default
+    /// message in the MessageState class needs to be updated
+
+    /// We require the initializers to run after the loading screen is rendered
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      List<Questions> y = [];
+      widget.databaseReference.once().then((DataSnapshot snapshot) {
+        quiz = Quiz.fromJson(
+            Map<String, dynamic>.from(snapshot.value[widget.quizID]));
+        for (int i = 0; i < 15; i++) {
+          Questions x = Questions.fromJson(Map<String, dynamic>.from(
+              snapshot.value[widget.quizID]['questions'][i]));
+          y.add(x);
+        }
+        quiz.questions = y;
+        //print(y);
+        // print("retrieved data: " + temp.toString());
+        //print("1");
+      });
+      // .then((data) {
+      //   quiz = data;
+      //   print("2");
+      //   //print(quiz);
+      // });
+
+      runInitTasks();
+    });
+  }
+
+  /// This method calls the initializers and once they complete redirects to
+  /// the widget provided in navigateAfterInit
+  @protected
+  Future runInitTasks() async {
+    /// Run each initializer method sequentially
+//print("3");
+    Navigator.of(context).pushReplacement(new MaterialPageRoute(
+        builder: (BuildContext context) => TambolaTicket(
+              quiz: quiz,
+              databaseReference: widget.databaseReference,
+            )));
+  }
+
+// Future<Quiz> _getJson() async {
+//     Quiz temp;
+//     List<Questions> y = [];
+//     widget.databaseReference.once().then((DataSnapshot snapshot) {
+//       temp = Quiz.fromJson(
+//           Map<String, dynamic>.from(snapshot.value[widget.quizID]));
+//       for (int i = 0; i < 15; i++) {
+//         Questions x = Questions.fromJson(Map<String, dynamic>.from(
+//             snapshot.value[widget.quizID]['questions'][i]));
+//         y.add(x);
+//       }
+//       temp.questions = y;
+//       print(y);
+//      // print("retrieved data: " + temp.toString());
+//      print("1");
+//     });
+//     return temp;
+//   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+}
 
 class TambolaTicket extends StatefulWidget {
   final int rows;
   final int cols;
-  final Quiz quiz;
+  Quiz quiz;
+  String quizID;
+  final databaseReference;
+  int score;
+  final int cornerPoints;
+  final int rowPoints;
+  final int fullHousePoints;
+  //Quiz temp;
 
-  const TambolaTicket({Key key, this.rows: 9, this.cols: 3, this.quiz})
-      : super(key: key);
+  TambolaTicket(
+      {this.rows: 9,
+      this.cols: 3,
+      this.quiz,
+      this.quizID = "0",
+      this.databaseReference,
+      this.score = 0,
+      this.cornerPoints = 15,
+      this.rowPoints = 15,
+      this.fullHousePoints = 40});
 
   @override
   _TambolaTicketState createState() => _TambolaTicketState();
@@ -41,6 +165,13 @@ class _TambolaTicketState extends State<TambolaTicket> {
   @override
   void initState() {
     super.initState();
+
+    // _getJson().then((result) {
+    //   setState(() {
+    //     widget.quiz = result;
+    //   });
+    // });
+
     restart();
   }
 
@@ -50,7 +181,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
     crossedNumbers = [];
     correctAnswers = [];
     renderedTicket = [];
-    widget.quiz.reset();
+    if (widget.quiz != null) widget.quiz.reset();
 
     _isCornersButtonDisabled = false;
     _isRow1ButtonDisabled = false;
@@ -58,13 +189,33 @@ class _TambolaTicketState extends State<TambolaTicket> {
     _isRow3ButtonDisabled = false;
     _isFullHouseButtonDisabled = false;
     randomNumber = -1;
-
   }
+
+  Future<Quiz> _getJson() async {
+    Quiz temp;
+    List<Questions> y = [];
+    widget.databaseReference.once().then((DataSnapshot snapshot) {
+      temp = Quiz.fromJson(
+          Map<String, dynamic>.from(snapshot.value[widget.quizID]));
+      for (int i = 0; i < 15; i++) {
+        Questions x = Questions.fromJson(Map<String, dynamic>.from(
+            snapshot.value[widget.quizID]['questions'][i]));
+        y.add(x);
+      }
+      temp.questions = y;
+      print("retrieved data: " + temp.toString());
+    });
+    return temp;
+  }
+
+  var _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     _context = context;
+
     return Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           title: Text(widget.quiz.quizName),
           elevation: 0.0,
@@ -73,6 +224,16 @@ class _TambolaTicketState extends State<TambolaTicket> {
           child: Container(
             child: Column(
               children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "Score: " + widget.score.toString(),
+                      style: TextStyle(fontSize: 15.0),
+                    )
+                  ],
+                ),
+
                 Container(
                     child: new Table(
                   border: TableBorder.all(),
@@ -80,7 +241,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
                 )),
                 Text("$statusText"),
                 //Text("$resultText"),
-                
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -119,6 +280,16 @@ class _TambolaTicketState extends State<TambolaTicket> {
                   children: <Widget>[
                     _buildFullHouseButton(),
                   ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    RaisedButton(
+                      color: Colors.grey,
+                      child: Text("Submit"),
+                      onPressed: _submitFinal,
+                    )
+                  ],
                 )
               ],
             ),
@@ -135,7 +306,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
     for (var i = 0; i < widget.rows; i++) {
       //new empty row
       List<Widget> rowChildren = [];
-      
+
       for (var j = 0; j < widget.cols; j++) {
         int value = initialTicket[i][j];
 
@@ -149,8 +320,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
             ques: widget.quiz.questions[id],
             answerStatus: getAnswerStatus(id),
           ));
-          if(getAnswerStatus(id) == 2)
-            correctAnswers.add(value);
+          if (getAnswerStatus(id) == 2) correctAnswers.add(value);
           id++;
         } else {
           rowChildren.add(Text(""));
@@ -164,13 +334,13 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   onButtonClicked(int value, int id, BuildContext context) {
     setState(() {
-
       //////////////////////////////////////////////////////////
       // showQuestion(id, widget.quiz, context);
       //     resultText =
       //         resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
       //     statusText = "Pull next number";
       //     crossedNumbers.add(value);
+      if (widget.quiz.questions[id].isCorrect == 2) correctAnswers.add(id);
       /////////////////////////////////////////////////////////
 
       if (value == randomNumber) {
@@ -180,8 +350,7 @@ class _TambolaTicketState extends State<TambolaTicket> {
               resultText = Random.secure().nextBool() ? "Housie" : "Whoo";
           statusText = "Pull next number";
           crossedNumbers.add(value);
-          if(widget.quiz.questions[id].isCorrect == 2)
-            correctAnswers.add(id);
+          if (widget.quiz.questions[id].isCorrect == 2) correctAnswers.add(id);
         } else {
           resultText = Random.secure().nextBool()
               ? "You can't cheat machine code id: $id"
@@ -241,24 +410,34 @@ class _TambolaTicketState extends State<TambolaTicket> {
     //await Navigator.push(context, new MaterialPageRoute(builder: (context) => BuildDialog(ID: id, quiz: quiz,)));
   }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // CALL BUTTONS CHECKING FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
+  void _submitFinal() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ResultPage(
+                  correctAnswers: correctAnswers,
+                  crossedNumbers: crossedNumbers,
+                  gotCorner: _isCornersButtonDisabled,
+                  gotRow1: _isRow1ButtonDisabled,
+                  gotRow2: _isRow2ButtonDisabled,
+                  gotRow3: _isRow3ButtonDisabled,
+                  gotFullHouse: _isFullHouseButtonDisabled,
+                  score: widget.score,
+                )));
+  }
 
   Widget _buildCornersButton() {
-    
     Text retText() {
-      if(_isCornersButtonDisabled) {
+      if (_isCornersButtonDisabled) {
         return new Text(
           "Call Corners",
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough
-          ),
+          style: TextStyle(decoration: TextDecoration.lineThrough),
         );
-      }
-      else
+      } else
         return new Text("Call Corners");
     }
 
@@ -271,15 +450,12 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   Widget _buildRow1Button() {
     Text retText() {
-      if(_isRow1ButtonDisabled) {
+      if (_isRow1ButtonDisabled) {
         return new Text(
           "Call Row 1",
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough
-          ),
+          style: TextStyle(decoration: TextDecoration.lineThrough),
         );
-      }
-      else
+      } else
         return new Text("Call Row 1");
     }
 
@@ -292,15 +468,12 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   Widget _buildRow2Button() {
     Text retText() {
-      if(_isRow2ButtonDisabled) {
+      if (_isRow2ButtonDisabled) {
         return new Text(
           "Call Row 2",
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough
-          ),
+          style: TextStyle(decoration: TextDecoration.lineThrough),
         );
-      }
-      else
+      } else
         return new Text("Call Row 2");
     }
 
@@ -313,15 +486,12 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   Widget _buildRow3Button() {
     Text retText() {
-      if(_isRow3ButtonDisabled) {
+      if (_isRow3ButtonDisabled) {
         return new Text(
           "Call Row 3",
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough
-          ),
+          style: TextStyle(decoration: TextDecoration.lineThrough),
         );
-      }
-      else
+      } else
         return new Text("Call Row 3");
     }
 
@@ -334,15 +504,12 @@ class _TambolaTicketState extends State<TambolaTicket> {
 
   Widget _buildFullHouseButton() {
     Text retText() {
-      if(_isFullHouseButtonDisabled) {
+      if (_isFullHouseButtonDisabled) {
         return new Text(
           "Call Full House",
-          style: TextStyle(
-            decoration: TextDecoration.lineThrough
-          ),
+          style: TextStyle(decoration: TextDecoration.lineThrough),
         );
-      }
-      else
+      } else
         return new Text("Call Full House");
     }
 
@@ -356,24 +523,33 @@ class _TambolaTicketState extends State<TambolaTicket> {
   void checkCorners() {
     List<int> temp = [];
     List<List<int>> tempTicket = transpose(initialTicket);
-    for(int i=0; i<3; i++) {
-      for(int j=0; j<9; j++) {
-        if(tempTicket[i][j] != 0)
-          temp.add(tempTicket[i][j]);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (tempTicket[i][j] != 0) temp.add(tempTicket[i][j]);
       }
     }
-    
+
     List<int> newTemp = [temp[0], temp[4], temp[10], temp[14]];
     bool flag = true;
     newTemp.forEach((f) {
-      if(crossedNumbers.contains(f))
-        flag=true;
-      else flag=false;
+      if (!correctAnswers.contains(f)) flag = false;
     });
 
-    print(correctAnswers);
-
-    print(flag.toString());
+    print("correct: " + correctAnswers.toString());
+    print("crossed: " + crossedNumbers.toString());
+    print("corners: " + flag.toString());
+    if (flag) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text("You got corners!"),
+        backgroundColor: Colors.green,
+        duration: Duration(milliseconds: 700),
+      ));
+      widget.score += widget.cornerPoints;
+    } else
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You didn\'t get corners"),
+          backgroundColor: Colors.red,
+          duration: Duration(milliseconds: 700)));
     setState(() {
       _isCornersButtonDisabled = flag;
     });
@@ -382,24 +558,33 @@ class _TambolaTicketState extends State<TambolaTicket> {
   void checkRow1() {
     List<int> temp = [];
     List<List<int>> tempTicket = transpose(initialTicket);
-    for(int i=0; i<3; i++) {
-      for(int j=0; j<9; j++) {
-        if(tempTicket[i][j] != 0)
-          temp.add(tempTicket[i][j]);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (tempTicket[i][j] != 0) temp.add(tempTicket[i][j]);
       }
     }
-    
+
     List<int> newTemp = [temp[0], temp[1], temp[2], temp[3], temp[4]];
     bool flag = true;
     newTemp.forEach((f) {
-      if(crossedNumbers.contains(f))
-        flag=true;
-      else flag=false;
+      if (!correctAnswers.contains(f)) flag = false;
     });
 
-    print(correctAnswers);
+    print("correct: " + correctAnswers.toString());
+    print("crossed: " + crossedNumbers.toString());
+    if (flag) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You got row 1!"),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 700)));
+      widget.score += widget.rowPoints;
+    } else
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You didn\'t get row 1"),
+          backgroundColor: Colors.red,
+          duration: Duration(milliseconds: 700)));
 
-    print(flag.toString());
+    print("row1: " + flag.toString());
     setState(() {
       _isRow1ButtonDisabled = flag;
     });
@@ -408,24 +593,33 @@ class _TambolaTicketState extends State<TambolaTicket> {
   void checkRow2() {
     List<int> temp = [];
     List<List<int>> tempTicket = transpose(initialTicket);
-    for(int i=0; i<3; i++) {
-      for(int j=0; j<9; j++) {
-        if(tempTicket[i][j] != 0)
-          temp.add(tempTicket[i][j]);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (tempTicket[i][j] != 0) temp.add(tempTicket[i][j]);
       }
     }
-    
+
     List<int> newTemp = [temp[5], temp[6], temp[7], temp[8], temp[9]];
     bool flag = true;
     newTemp.forEach((f) {
-      if(crossedNumbers.contains(f))
-        flag=true;
-      else flag=false;
+      if (!correctAnswers.contains(f)) flag = false;
     });
 
-    print(correctAnswers);
+    print("correct: " + correctAnswers.toString());
+    print("crossed: " + crossedNumbers.toString());
+    if (flag) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You got row 2!"),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 700)));
+      widget.score += widget.rowPoints;
+    } else
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You didn\'t get row 2"),
+          backgroundColor: Colors.red,
+          duration: Duration(milliseconds: 700)));
 
-    print(flag.toString());
+    print("row2: " + flag.toString());
     setState(() {
       _isRow2ButtonDisabled = flag;
     });
@@ -434,24 +628,33 @@ class _TambolaTicketState extends State<TambolaTicket> {
   void checkRow3() {
     List<int> temp = [];
     List<List<int>> tempTicket = transpose(initialTicket);
-    for(int i=0; i<3; i++) {
-      for(int j=0; j<9; j++) {
-        if(tempTicket[i][j] != 0)
-          temp.add(tempTicket[i][j]);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (tempTicket[i][j] != 0) temp.add(tempTicket[i][j]);
       }
     }
-    
+
     List<int> newTemp = [temp[10], temp[11], temp[12], temp[13], temp[14]];
     bool flag = true;
     newTemp.forEach((f) {
-      if(crossedNumbers.contains(f))
-        flag=true;
-      else flag=false;
+      if (!correctAnswers.contains(f)) flag = false;
     });
 
-    print(correctAnswers);
+    print("correct: " + correctAnswers.toString());
+    print("crossed: " + crossedNumbers.toString());
+    if (flag) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You got row 3!"),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 700)));
+      widget.score += widget.rowPoints;
+    } else
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You didn\'t get row 3"),
+          backgroundColor: Colors.red,
+          duration: Duration(milliseconds: 700)));
 
-    print(flag.toString());
+    print("row3: " + flag.toString());
     setState(() {
       _isRow3ButtonDisabled = flag;
     });
@@ -460,23 +663,32 @@ class _TambolaTicketState extends State<TambolaTicket> {
   void checkFullHouse() {
     List<int> temp = [];
     List<List<int>> tempTicket = transpose(initialTicket);
-    for(int i=0; i<3; i++) {
-      for(int j=0; j<9; j++) {
-        if(tempTicket[i][j] != 0)
-          temp.add(tempTicket[i][j]);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (tempTicket[i][j] != 0) temp.add(tempTicket[i][j]);
       }
     }
-    
+
     bool flag = true;
     temp.forEach((f) {
-      if(crossedNumbers.contains(f))
-        flag=true;
-      else flag=false;
+      if (!correctAnswers.contains(f)) flag = false;
     });
 
-    print(correctAnswers);
+    print("correct: " + correctAnswers.toString());
+    print("crossed: " + crossedNumbers.toString());
+    if (flag) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You got full house!"),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 700)));
+      widget.score += widget.fullHousePoints;
+    } else
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text("You didn\'t get full house"),
+          backgroundColor: Colors.red,
+          duration: Duration(milliseconds: 700)));
 
-    print(flag.toString());
+    print("full house: " + flag.toString());
     setState(() {
       _isFullHouseButtonDisabled = flag;
     });
